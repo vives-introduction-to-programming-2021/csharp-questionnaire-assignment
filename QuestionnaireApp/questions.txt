@@ -1,0 +1,12 @@
+#What is the hexadecimal presentation of 10?
++0x0A
+-0x13
+-0x10
+-0xA0
+===
+#What is a drop-in alternative for MySQL?
++mariadb
+-Microsoft SQL
+-Oracle
+-SqlLite
+===
