@@ -36,11 +36,45 @@ A better solution is to create a library of the classes. Check the course on how
 
 This library can then be shared between both the console application and the WPF application.
 
+## Playing
+
+Setup the Questionnaire database when the main window is loaded. Select a random question from the database and populate the UI with the data from the question.
+
+Allow the player to select an answer using the buttons / radio buttons. Try to solve this using a single event handler for all the buttons. Select a new question when the player has chosen his/her answer.
+
+Track how many questions the player has already solved / correctly / incorrectly.
+
+## Questionnaire Game
+
+Notice that your WPF application already contains quitte a lot of game logic.
+
+It
+
+* keeps track of the current question
+* keeps track of the number of correct and wrong selected answers
+* ...
+
+A lot of this can be abstracted away into a sort of `Game` class.
+
+The `Game` class could have the following public interface:
+
+```
+##############################################
+# Game
+##############################################
+##############################################
+# + Game(numberOfQuestions: int)
+# + NextQuestion(): MultipleChoiceQuestion
+# + SelectAnswer(index: int): bool
+##############################################
+```
+
+This is a proposition. Alterations might be required for your specific case.
+
 ## Future
 
 While the following steps are not yet documented this is what the future will probable bring.
 
-* Playing Questionnaire
 * Scoreboard
 * Adding Questions
 * Database connection
