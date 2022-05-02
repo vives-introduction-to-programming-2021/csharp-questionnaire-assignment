@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace QuestionnaireApp
+namespace QuestionnaireLibrary
 {
-  class QuestionDatabase
+  public class QuestionDatabase
   {
     public void AddQuestion(MultipleChoiceQuestion question)
     {

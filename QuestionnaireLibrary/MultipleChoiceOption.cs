@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace QuestionnaireApp
+namespace QuestionnaireLibrary
 {
-    class MultipleChoiceOption
+    public class MultipleChoiceOption
     {
         // Constructor
         public MultipleChoiceOption()

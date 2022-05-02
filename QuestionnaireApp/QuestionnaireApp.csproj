@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\QuestionnaireLibrary\QuestionnaireLibrary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="questions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

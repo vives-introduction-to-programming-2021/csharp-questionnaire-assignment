@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace QuestionnaireApp
+namespace QuestionnaireLibrary
 {
-    class MultipleChoiceQuestion
+    public class MultipleChoiceQuestion
     {
         // Setter for Text
         //public void SetText(string text)
