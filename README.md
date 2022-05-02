@@ -64,7 +64,7 @@ The `Game` class could have the following public interface:
 ##############################################
 ##############################################
 # + Game(numberOfQuestions: int)
-# + NextQuestion(): MultipleChoiceQuestion
+# + CurrentQuestion(): MultipleChoiceQuestion
 # + SelectAnswer(index: int): bool
 ##############################################
 ```
