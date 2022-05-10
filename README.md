@@ -71,6 +71,37 @@ The `Game` class could have the following public interface:
 
 This is a proposition. Alterations might be required for your specific case.
 
+## A Player Login
+
+Create a nice looking login window for the player where he/she can enter a nickname to play with. An example is shown below.
+
+![Player Login](./img/login.png)
+
+Your's should of course be designed in the style of your application.
+
+### A Player Class
+
+The next objective is to create a `Player` class that can store the nickname of the user. Create a new class (in the library) that adheres to the following UML model:
+
+```
+##############################################
+# Player
+##############################################
+##############################################
+# + Player(nickname: string)
+# + <<get>> Nickname: string
+# - <<get>> Nickname: string
+##############################################
+```
+
+### Creating a Player
+
+When the user clicks the `Play` button on the login window, a new `Player` object should be instantiated with the text provided in the nickname `TextBox`.
+
+Then open up the main window and pass the player object to the main window via the constructor. Make sure to store the player in a private attribute of the main window class.
+
+Once this is up and running, show the players name in the main window. Feel free on how to implement this.
+
 ## Future
 
 While the following steps are not yet documented this is what the future will probable bring.
