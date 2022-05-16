@@ -102,11 +102,192 @@ Then open up the main window and pass the player object to the main window via t
 
 Once this is up and running, show the players name in the main window. Feel free on how to implement this.
 
-## Future
+## Database
 
-While the following steps are not yet documented this is what the future will probable bring.
+The next topic involves setting up a nice MySql database to store the questions and options.
 
-* Scoreboard
-* Adding Questions
-* Database connection
+### MySql.Data adapter
+
+Start by installing the `MySql.Data` NuGet package. DO this by right clicking your library project and selecting `Manage NuGet Packages`. Next select the tab `Browse` and search for `MySql`.
+
+Select the `MySql.Data` package and hit the `Install` button.
+
+### A Repository Interface
+
+We have come to a point where we have two sources for our questions, one from a file `questions.txt` and one from a mysql database. This is the perfect opportunity to decouple our class `Game` from the `QuestionDatabase` class (which was actually named badly).
+
+This can be achieved by creating an interface called `IQuestionRepository`. The only method making up the interface is the `GetRandomQuestion()` method:
+
+```csharp
+public interface IQuestionRepository
+{
+    public MultipleChoiceQuestion GetRandomQuestion();
+}
+```
+
+Now it's time to implement the interface in the `QuestionDatabase` class:
+
+```csharp
+public class QuestionDatabase : IQuestionRepository
+```
+
+Since it already contains the method `GetRandomQuestion()`, no further action is required.
+
+However, before continuing we should rename our `QuestionDatabase` class to a more suitable name like `QuestionFileRepository`:
+
+```csharp
+public class QuestionFileRepository : IQuestionRepository
+```
+
+Make sure to change the name of the class, the name of the file and the type inside your `Game` class attribute.
+
+### Decoupling Game from QuestionFileRepository
+
+Implementing the interface is not enough on its own. Our `Game` class is still tightly coupled to the `QuestionFileRepository` class as it still uses this class as a type for an attribute.
+
+We can solve this by changing the internal attribute from:
+
+```csharp
+private QuestionFileRepository database = new QuestionFileRepository();
+```
+
+to
+
+```csharp
+private IQuestionRepository database = new QuestionFileRepository();
+```
+
+While the instance is still an object of type `QuestionFileRepository`, the attribute actually references an `IQuestionRepository`.
+
+Make sure to test if your application is still running.
+
+### Creating a QuestionDatabaseRepository
+
+Now we can create a `QuestionDatabaseRepository` class that implements this same interface:
+
+```csharp
+public class QuestionDatabaseRepository : IQuestionRepository
+{
+    public QuestionDatabaseRepository(string database="questionnaire", string username="root", string password="")
+    {
+        string connectionString = $"server=localhost;userid={username};password={password};database={database}";
+        connection = new MySqlConnection(connectionString);
+        connection.Open();
+        Console.WriteLine($"MySQL version : {connection.ServerVersion}");
+    }
+
+    public MultipleChoiceQuestion GetRandomQuestion()
+    {
+        using var cmd = new MySqlCommand(
+            @"SELECT question.text, options.text, options.is_correct
+              FROM(SELECT * FROM questions ORDER BY RAND() LIMIT 1) as question
+              LEFT JOIN options ON question.id = options.qid
+              ; ",
+            connection
+        );
+
+        using MySqlDataReader reader = cmd.ExecuteReader();
+
+        MultipleChoiceQuestion question = new MultipleChoiceQuestion("");
+        while (reader.Read())
+        {
+            question.Text = reader.GetString(0);
+            question.AddOption(new MultipleChoiceOption(reader.GetString(1), reader.GetBoolean(2)));
+        }
+
+        return question;
+    }
+
+    public void InsertQuestion(MultipleChoiceQuestion question)
+    {
+        using var cmd = new MySqlCommand(
+            "INSERT INTO questions(text) VALUES(@text)",
+            connection
+        );
+
+        cmd.Parameters.AddWithValue("@text", question.Text);
+        cmd.Prepare();
+        cmd.ExecuteNonQuery();
+
+        foreach (var option in question.GetOptions())
+        {
+            InsertOption(option, cmd.LastInsertedId);
+        }
+    }
+
+    private void InsertOption(MultipleChoiceOption option, long questionId)
+    {
+        using var cmd = new MySqlCommand(
+              "INSERT INTO options(text,is_correct,qid) VALUES(@text,@correct,@qid)",
+              connection
+        );
+
+        cmd.Parameters.AddWithValue("@text", option.Text);
+        cmd.Parameters.AddWithValue("@correct", option.IsCorrect);
+        cmd.Parameters.AddWithValue("@qid", questionId);
+        cmd.Prepare();
+        cmd.ExecuteNonQuery();
+    }
+
+    private MySqlConnection connection = null;
+```
+
+### The Database
+
+Before we can actually test this we also need to create a database and the appropriate tables. Use the `mysql` client or another tool to setup and provision the database.
+
+```sql
+CREATE DATABASE IF NOT EXISTS `questionnaire` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `questionnaire`;
+
+CREATE TABLE `questions` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `text` text NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `options` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `text` text NOT NULL,
+  `is_correct` tinyint(1) NOT NULL,
+  `qid` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`qid`) REFERENCES `questions`(`id`)
+);
+
+INSERT INTO `questions` (`id`, `text`) VALUES (1, 'What has the same name as the class it belongs to in C#?');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'A constructor', '1', '1');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'A overriding method', '0', '1');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'A mutator method', '0', '1');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'A property', '0', '1');
+
+INSERT INTO `questions` (`id`, `text`) VALUES (2, 'Interfaces allow us to ...');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'decouple classes from each other', '1', '2');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'create smaller implementations', '0', '2');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'cleanup our public methods', '0', '2');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'use composition', '0', '2');
+
+INSERT INTO `questions` (`id`, `text`) VALUES (3, 'What keyword/symbol is used when a class implements an interface?');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, ':', '1', '3');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, '=>', '0', '3');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'implements', '0', '3');
+INSERT INTO `options` (`id`, `text`, `is_correct`, `qid`) VALUES (NULL, 'inherits', '0', '3');
+```
+
+### Using the QuestionDatabaseRepository
+
+Now instead of fetching our questions from a file, we want to use the database. This can very easily achieved by instantiating a `QuestionDatabaseRepository` in the `Game` class instead of `QuestionFileRepository`:
+
+```csharp
+private IQuestionRepository database = new QuestionDatabaseRepository();
+```
+
+## Extra Grader
+
+You can earn extra grades by implementing one/some of the following features:
+
+* A scoreboard of the players
+* Allowing the user to add questions
+* Allow the user to choose some test options (for example number of questions)
+* Storing the scores of the players in the database
 * ...
